@@ -10,6 +10,7 @@ import Pagination from "@/components/Pagination/Pagination";
 import NoteForm from "@/components/NoteForm/NoteForm";
 import Modal from "@/components/Modal/Modal";
 import styles from "./NotesPage.module.css";
+import { useRouter } from "next/navigation";
 
 type NotesData = {
   notes: Note[];
@@ -33,7 +34,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function NotesClient({ initialData, tag }: Props) {
-  console.log("NotesClient received tag:", tag);
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -61,7 +62,10 @@ export default function NotesClient({ initialData, tag }: Props) {
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    router.back();
+  };
 
   return (
       <>
@@ -93,8 +97,8 @@ export default function NotesClient({ initialData, tag }: Props) {
         )}
 
         {isModalOpen && (
-          <Modal isOpen onClose={() => setIsModalOpen(false)}>
-            <NoteForm onClose={() => setIsModalOpen(false)} />
+          <Modal isOpen onClose={handleCancel}>
+            <NoteForm />
           </Modal>
         )}
       </>

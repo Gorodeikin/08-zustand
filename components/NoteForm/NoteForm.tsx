@@ -1,79 +1,112 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import css from "./NoteForm.module.css";
-import { createNote } from "@/lib/api";
-import type { NoteTag } from "@/types/note";
+'use client';
 
-interface NoteFormProps {
-  onClose: () => void;
-}
+import { FormEvent, useState, useEffect } from 'react';
+import css from './NoteForm.module.css';
+import type { NoteTag } from '@/types/note';
+import { createNote } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useNoteStore } from '@/lib/store/noteStore';
 
-const validationSchema = Yup.object({
-  title: Yup.string().min(3).max(50).required("Title is required"),
-  content: Yup.string().max(500),
-  tag: Yup.mixed<NoteTag>()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
-    .required("Tag is required"),
-});
 
-export default function NoteForm({ onClose }: NoteFormProps) {
+export default function NoteForm() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { draft, setDraft, clearDraft } = useNoteStore();
+
+  const [title, setTitle] = useState(draft.title);
+  const [content, setContent] = useState(draft.content);
+  const [tag, setTag] = useState<NoteTag>(draft.tag as NoteTag);
 
   const createMutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"], exact: false });
-      onClose();
+      queryClient.invalidateQueries({ queryKey: ['notes'], exact: false });
+      clearDraft();
+      router.back();
     },
   });
 
+  useEffect(() => {
+    setDraft({ title, content, tag });
+  }, [title, content, tag, setDraft]);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (title.trim().length < 3 || title.trim().length > 50) {
+      alert('Title must be between 3 and 50 characters');
+      return;
+    }
+
+    if (content.length > 500) {
+      alert('Content must be up to 500 characters');
+      return;
+    }
+
+    createMutation.mutate({ title, content, tag });
+  };
+
+  const handleCancel = () => {
+    router.back();
+  };
+
   return (
-    <Formik
-      initialValues={{ title: "", content: "", tag: "Todo" }}
-      validationSchema={validationSchema}
-      onSubmit={(values) =>
-        createMutation.mutate({
-          title: values.title,
-          content: values.content,
-          tag: values.tag as NoteTag,
-        })
-      }
-    >
-      <Form className={css.form}>
-        <div className={css.formGroup}>
-          <label htmlFor="title">Title</label>
-          <Field id="title" name="title" className={css.input} />
-          <ErrorMessage name="title" component="span" className={css.error} />
-        </div>
+    <form onSubmit={handleSubmit} className={css.form}>
+      <div className={css.formGroup}>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          className={css.input}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor="content">Content</label>
-          <Field as="textarea" id="content" name="content" rows={8} className={css.textarea} />
-          <ErrorMessage name="content" component="span" className={css.error} />
-        </div>
+      <div className={css.formGroup}>
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          className={css.textarea}
+          rows={8}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+      </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor="tag">Tag</label>
-          <Field as="select" id="tag" name="tag" className={css.select}>
-            <option value="Todo">Todo</option>
-            <option value="Work">Work</option>
-            <option value="Personal">Personal</option>
-            <option value="Meeting">Meeting</option>
-            <option value="Shopping">Shopping</option>
-          </Field>
-          <ErrorMessage name="tag" component="span" className={css.error} />
-        </div>
+      <div className={css.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select
+          id="tag"
+          className={css.select}
+          value={tag}
+          onChange={(e) => setTag(e.target.value as NoteTag)}
+        >
+          <option value="Todo">Todo</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+      </div>
 
-        <div className={css.actions}>
-          <button type="button" className={css.cancelButton} onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className={css.submitButton} disabled={createMutation.isPending}>
-            {createMutation.isPending ? "Creating..." : "Create note"}
-          </button>
-        </div>
-      </Form>
-    </Formik>
+      <div className={css.actions}>
+        <button
+          type="button"
+          className={css.cancelButton}
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={css.submitButton}
+          disabled={createMutation.isPending}
+        >
+          {createMutation.isPending ? 'Creating...' : 'Create note'}
+        </button>
+      </div>
+    </form>
   );
 }
