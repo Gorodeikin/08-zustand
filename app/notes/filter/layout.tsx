@@ -3,14 +3,14 @@ import styles from "./LayoutNotes.module.css";
 type Props = {
   children: React.ReactNode;
   sidebar: React.ReactNode; 
-  params: { slug?: string[] };
+  params: Promise<{ slug?: string[] }>;
 };
 
-export default function NotesLayout({ children, sidebar }: Props) {
+export default async function NotesLayout({ children, sidebar, params }: Props) {
   return (
     <section className={styles.container}>
       <aside className={styles.aside}>
-      {sidebar}
+        {sidebar}
       </aside>
       <div className={styles.notesWrapper}>{children}</div>
     </section>
