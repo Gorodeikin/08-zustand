@@ -6,7 +6,7 @@ type Props = {
   params: Promise<{ slug?: string[] }>;
 };
 
-export default async function NotesLayout({ children, sidebar, params }: Props) {
+export default async function NotesLayout({ children, sidebar }: Props) {
   return (
     <section className={styles.container}>
       <aside className={styles.aside}>

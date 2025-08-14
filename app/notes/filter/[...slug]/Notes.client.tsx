@@ -7,8 +7,6 @@ import type { Note } from "@/types/note";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
-import NoteForm from "@/components/NoteForm/NoteForm";
-import Modal from "@/components/Modal/Modal";
 import styles from "./NotesPage.module.css";
 import { useRouter } from "next/navigation";
 
@@ -36,7 +34,6 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function NotesClient({ initialData, tag }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(initialData.page);
@@ -62,18 +59,14 @@ export default function NotesClient({ initialData, tag }: Props) {
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const handleCancel = () => {
-    setIsModalOpen(false);
-    router.back();
-  };
-
   return (
       <>
         <header className={styles.toolbar}>
           <SearchBox value={search} onChange={setSearch} />
           <button
+            type="button"
             className={styles.button}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => router.push("/notes/action/create")}
             aria-label="Create new note"
           >
             Create note +
@@ -94,12 +87,6 @@ export default function NotesClient({ initialData, tag }: Props) {
             totalPages={totalPages}
             onPageChange={setPage}
           />
-        )}
-
-        {isModalOpen && (
-          <Modal isOpen onClose={handleCancel}>
-            <NoteForm />
-          </Modal>
         )}
       </>
   );
